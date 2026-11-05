@@ -117,6 +117,12 @@ details.panel > summary { cursor: pointer; font-weight: 600; display: flex; gap:
 .alltab .nm.me { color: var(--accent); }
 .alltab .chip { display: block; text-align: center; font-size: 0.72rem; padding: 1px 2px; min-height: 0; }
 .alltab .cnt { grid-column: 1 / -1; border-top: 0; color: var(--muted); font-size: 0.8rem; padding-top: 0; }
+.qs .seg { justify-self: start; }
+.qpane { display: grid; justify-items: center; gap: 10px; }
+#qcanvas { width: min(78vw, 330px); height: auto; aspect-ratio: 1; background: #fff; border-radius: 10px; padding: 10px; image-rendering: pixelated; }
+#qvideo { width: min(86vw, 380px); aspect-ratio: 1; object-fit: cover; border-radius: 12px; background: #000; }
+.qinfo { margin: 0; text-align: center; color: var(--muted); font-size: 0.88rem; max-width: 34ch; }
+.qinfo b { color: var(--ink); }
 .bs-grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
 .bs-x { padding: 4px 10px; border-color: var(--line); color: var(--muted); }
 .vhint { margin: -4px 0 8px; font-size: 0.8rem; color: var(--muted); }
@@ -232,6 +238,8 @@ html, body { height: 100%; margin: 0; }
 
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/tesseract/tesseract.min.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="vendor/jsQR.js"></script>
 <script src="app.data.js"></script>
 <script>
 (() => {
@@ -251,6 +259,11 @@ html, body { height: 100%; margin: 0; }
     document.getElementById("gate").remove();
     document.getElementById("root").innerHTML = app.markup;
     window.appLock = () => { ls.del(KEY); location.reload(); };
+    // key for QR code sharing between ORION users: derived from the same password, so only ORION can read what is shared
+    try {
+      const hk = await crypto.subtle.importKey("raw", await crypto.subtle.exportKey("raw", key), "HKDF", false, ["deriveKey"]);
+      window.appShareKey = await crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new Uint8Array(16), info: new TextEncoder().encode("orion-partage") }, hk, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    } catch (e) { window.appShareKey = null; }
     new Function(app.script)();
   }
   if ("serviceWorker" in navigator) { try { navigator.serviceWorker.register("sw.js").catch(() => {}); } catch (e) {} }
